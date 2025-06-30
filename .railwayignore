@@ -1,0 +1,25 @@
+# Virtual environment
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Test files and images
+test_*.py
+verify_*.py
+example_*.py
+test_images/
+example_images/
+.pytest_cache/
+
+# Environment and IDE files
+.env
+.DS_Store
+.vscode/
+*.log
+
+# Large or temporary files
+*.zip
+*.tar.gz
+sample_skus.csv

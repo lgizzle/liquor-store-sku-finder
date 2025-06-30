@@ -1,0 +1,14 @@
+requests
+beautifulsoup4
+selenium
+pillow
+python-dotenv
+aiohttp
+asyncio
+flask
+flask-cors
+gunicorn
+lxml
+urllib3
+pathlib2
+dataclasses
