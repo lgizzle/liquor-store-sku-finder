@@ -515,22 +515,43 @@
 
         .download-btn {
             display: inline-block;
-            padding: 8px 16px;
+            padding: 12px 20px;
             background: linear-gradient(135deg, #DC143C 0%, #8B0000 100%);
             color: white;
             text-decoration: none;
-            border-radius: 6px;
-            font-size: 0.9em;
+            border-radius: 8px;
+            font-size: 1em;
             font-weight: 600;
             transition: all 0.3s ease;
-            margin: 2px;
+            margin: 5px;
             border: none;
             cursor: pointer;
+            min-width: 160px;
         }
 
         .download-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(220, 20, 60, 0.3);
+        }
+
+        .copy-btn {
+            background: linear-gradient(135deg, #2c2c2c 0%, #1a1a1a 100%);
+            color: white;
+        }
+
+        .copy-btn:hover {
+            box-shadow: 0 5px 15px rgba(44, 44, 44, 0.3);
+        }
+
+        .file-preview {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 0.9em;
+            color: #666;
+            text-align: left;
         }
 
         .error, .success, .info {
@@ -668,7 +689,6 @@
                     <button class="btn-primary" onclick="searchSingle()">🔍 Search Single SKU</button>
                     <button class="btn-primary" onclick="searchBatch()">📋 Batch Search</button>
                     <button class="btn-secondary" onclick="clearResults()">🗑️ Clear Results</button>
-                    <button class="btn-secondary" onclick="showProductBrowser()">📁 Browse Products</button>
                 </div>
 
                 <!-- Elegant Demo Section -->
@@ -716,14 +736,6 @@
                     <span id="resultCount">0 products found</span>
                 </div>
                 <div class="results-grid" id="resultsGrid"></div>
-            </div>
-
-            <div class="results-section" id="browserSection">
-                <div class="results-header">
-                    <h2>📁 Product File Browser</h2>
-                    <span id="browserCount">Loading...</span>
-                </div>
-                <div id="browserGrid" class="results-grid"></div>
             </div>
         </div>
     </div>
@@ -815,87 +827,146 @@
         function clearResults() {
             allResults = [];
             document.getElementById('resultsSection').style.display = 'none';
-            document.getElementById('browserSection').style.display = 'none';
             document.getElementById('singleSku').value = '';
             document.getElementById('batchSkus').value = '';
             clearMessages();
         }
 
-        async function showProductBrowser() {
-            const browserSection = document.getElementById('browserSection');
-            const browserGrid = document.getElementById('browserGrid');
-            const browserCount = document.getElementById('browserCount');
+        // Copy product info to clipboard
+        function copyProductInfo(result) {
+            const productText = generateProductText(result);
             
-            // Hide results section
-            document.getElementById('resultsSection').style.display = 'none';
-            
-            clearMessages();
-            showLoading(true);
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(productText).then(() => {
+                    showMessage('✅ Product information copied to clipboard!', 'success');
+                }).catch(err => {
+                    console.error('Clipboard error:', err);
+                    fallbackCopyToClipboard(productText);
+                });
+            } else {
+                fallbackCopyToClipboard(productText);
+            }
+        }
+
+        function fallbackCopyToClipboard(text) {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-999999px';
+            textArea.style.top = '-999999px';
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
             
             try {
-                const response = await fetch('/api/browse-products');
-                const data = await response.json();
-                showLoading(false);
-                
-                browserSection.style.display = 'block';
-                
-                if (data.success && data.products.length > 0) {
-                    browserCount.textContent = `${data.count} products found`;
-                    browserGrid.innerHTML = '';
-                    
-                    data.products.forEach(product => {
-                        const card = document.createElement('div');
-                        card.className = 'product-card';
-                        
-                        const createdDate = new Date(product.created_date * 1000).toLocaleDateString();
-                        
-                        // Generate file links
-                        const filesHtml = product.files.map(file => {
-                            const fileUrl = `/files/${encodeURIComponent(product.folder_name)}/${encodeURIComponent(file)}`;
-                            let icon = '📄';
-                            if (file.includes('.json')) icon = '📋';
-                            else if (file.includes('.txt')) icon = '📝';
-                            else if (file.match(/\.(jpg|jpeg|png|gif|bmp|webp)$/i)) icon = '🖼️';
-                            
-                            return `<a href="${fileUrl}" class="download-btn" target="_blank">${icon} ${file}</a>`;
-                        }).join(' ');
-                        
-                        card.innerHTML = `
-                            <div class="product-title">${product.product_name}</div>
-                            
-                            <div class="product-meta" style="margin: 10px 0;">
-                                <span class="source-badge">UPC: ${product.upc}</span>
-                                <span class="sku-display">${createdDate}</span>
-                            </div>
-                            
-                            <div style="background: #f1f3f4; padding: 12px; border-radius: 8px; margin: 10px 0;">
-                                <div style="font-weight: 600; margin-bottom: 8px;">📂 Folder Structure:</div>
-                                <div style="font-family: monospace; color: #666; font-size: 0.9em;">
-                                    📁 ${product.folder_name}/<br>
-                                    ${product.files.map(f => `&nbsp;&nbsp;&nbsp;&nbsp;📄 ${f}`).join('<br>')}
-                                </div>
-                            </div>
-                            
-                            <div style="margin-top: 15px;">
-                                <div style="font-weight: 600; margin-bottom: 8px;">Direct File Access:</div>
-                                ${filesHtml}
-                            </div>
-                        `;
-                        
-                        browserGrid.appendChild(card);
-                    });
-                    
-                    showMessage(`Found ${data.count} organized product folders`, 'success');
-                } else {
-                    browserGrid.innerHTML = '<div class="no-results">No product folders found. Search for some UPCs first!</div>';
-                    browserCount.textContent = '0 products found';
-                    showMessage('This shows previously searched products organized in folders with JSON, TXT, and image files.', 'info');
-                }
-                
-            } catch (error) {
-                showMessage('Error loading product browser: ' + error.message, 'error');
-                browserGrid.innerHTML = '<div class="no-results">Error loading products</div>';
+                document.execCommand('copy');
+                showMessage('✅ Product information copied to clipboard!', 'success');
+            } catch (err) {
+                console.error('Fallback copy failed:', err);
+                showMessage('❌ Could not copy to clipboard', 'error');
+            } finally {
+                document.body.removeChild(textArea);
             }
+        }
+
+        function generateProductText(result) {
+            let text = `${result.title}\n`;
+            text += `SKU/UPC: ${result.sku}\n`;
+            text += `Source: ${result.source}\n\n`;
+            
+            if (result.description && result.description.trim()) {
+                text += `Description:\n${result.description}\n\n`;
+            }
+            
+            if (result.brand && result.brand.trim()) {
+                text += `Brand: ${result.brand}\n`;
+            }
+            if (result.category && result.category.trim()) {
+                text += `Category: ${result.category}\n`;
+            }
+            if (result.region && result.region.trim()) {
+                text += `Region: ${result.region}\n`;
+            }
+            if (result.specs && result.specs.trim()) {
+                text += `Specifications: ${result.specs}\n`;
+            }
+            
+            if (result.image_url) {
+                text += `\nImage URL: ${result.image_url}\n`;
+            }
+            
+            return text;
+        }
+
+        // Sanitize filename for downloads
+        function sanitizeFilename(name) {
+            return name.replace(/[<>:"/\\|?*]+/g, '_').replace(/_+/g, '_').trim();
+        }
+
+        // Download all files for a product
+        function downloadAllFiles(result) {
+            const sanitizedSku = sanitizeFilename(result.sku);
+            const sanitizedName = sanitizeFilename(result.title);
+            const baseFilename = `${sanitizedSku}--${sanitizedName}`;
+            
+            // Download TXT file
+            const txtContent = generateProductText(result);
+            downloadFile(`${baseFilename}--Info.txt`, txtContent, 'text/plain');
+            
+            // Download JSON file
+            const jsonData = {
+                upc: result.sku,
+                name: result.title,
+                description: result.description || '',
+                brand: result.brand || '',
+                category: result.category || '',
+                region: result.region || '',
+                specifications: result.specs || '',
+                image_url: result.image_url || '',
+                source: result.source,
+                created_date: new Date().toISOString()
+            };
+            downloadFile(`${baseFilename}--Data.json`, JSON.stringify(jsonData, null, 2), 'application/json');
+            
+            // Download image if available
+            if (result.image_url) {
+                downloadImageFromUrl(result.image_url, `${baseFilename}--Image.jpg`);
+            }
+            
+            showMessage('📦 All files downloaded! Check your Downloads folder.', 'success');
+        }
+
+        function downloadFile(filename, content, mimeType) {
+            const blob = new Blob([content], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.style.display = 'none';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function downloadImageFromUrl(imageUrl, filename) {
+            fetch(imageUrl)
+                .then(response => response.blob())
+                .then(blob => {
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = filename;
+                    a.style.display = 'none';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                })
+                .catch(error => {
+                    console.error('Error downloading image:', error);
+                    showMessage('⚠️ Could not download image file', 'error');
+                });
         }
 
         async function searchSingle() {
@@ -925,10 +996,7 @@
                     displayResults(data.results);
                     
                     if (demoMode) {
-                        showDemoTooltip('🎉 Success! Found product info and created organized folder with JSON, TXT, and image files!', 4000);
-                        setTimeout(() => {
-                            showDemoTooltip('💡 Try "Browse Products" to see all your searched items organized in folders!', 3000);
-                        }, 4500);
+                        showDemoTooltip('🎉 Success! Product found with all details ready for download!', 4000);
                         demoMode = false; // End demo mode
                     }
                     
@@ -999,9 +1067,6 @@
             const resultsSection = document.getElementById('resultsSection');
             const resultsGrid = document.getElementById('resultsGrid');
             const resultCount = document.getElementById('resultCount');
-            
-            // Hide browser section
-            document.getElementById('browserSection').style.display = 'none';
 
             if (results.length === 0) {
                 resultsSection.style.display = 'block';
@@ -1017,24 +1082,6 @@
             results.forEach((result, index) => {
                 const card = document.createElement('div');
                 card.className = 'product-card';
-
-                // Download section
-                let downloadSection = '';
-                if (result.folder_name) {
-                    downloadSection = `
-                        <div class="download-section">
-                            <div style="margin-bottom: 10px; font-weight: 600; color: #2c2c2c;">📁 Product Package:</div>
-                            <div style="background: #f8f9fa; padding: 10px; border-radius: 6px; margin-bottom: 10px; font-family: monospace; font-size: 0.9em;">
-                                📂 ${result.folder_name}/
-                            </div>
-                            <div style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;">
-                                <a href="/files/${encodeURIComponent(result.folder_name)}/product_info.json" class="download-btn" target="_blank">📄 JSON</a>
-                                <a href="/files/${encodeURIComponent(result.folder_name)}/product_info.txt" class="download-btn" target="_blank">📝 TXT</a>
-                                ${result.image_filename ? `<a href="/files/${encodeURIComponent(result.folder_name)}/${encodeURIComponent(result.image_filename)}" class="download-btn" target="_blank">🖼️ Image</a>` : ''}
-                            </div>
-                        </div>
-                    `;
-                }
 
                 // Product description
                 let descriptionHtml = '';
@@ -1063,6 +1110,10 @@
                 
                 detailsHtml += '</div>';
 
+                // Streamlined download section
+                const sanitizedSku = sanitizeFilename(result.sku);
+                const sanitizedName = sanitizeFilename(result.title);
+                
                 card.innerHTML = `
                     <img src="${result.image_url}" 
                          alt="${result.title}" 
@@ -1078,7 +1129,19 @@
 
                     ${descriptionHtml}
                     ${detailsHtml}
-                    ${downloadSection}
+                    
+                    <div class="download-section">
+                        <div style="margin-bottom: 15px; font-weight: 600; color: #2c2c2c;">📁 Files will be named:</div>
+                        <div class="file-preview">
+                            📂 ${sanitizedSku}--${sanitizedName}--Info.txt<br>
+                            📂 ${sanitizedSku}--${sanitizedName}--Data.json<br>
+                            📂 ${sanitizedSku}--${sanitizedName}--Image.jpg
+                        </div>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 15px;">
+                            <button class="download-btn copy-btn" onclick="copyProductInfo(allResults[${index}])">📋 Copy Text</button>
+                            <button class="download-btn" onclick="downloadAllFiles(allResults[${index}])">📦 Download All Files</button>
+                        </div>
+                    </div>
                 `;
 
                 resultsGrid.appendChild(card);
