@@ -281,18 +281,18 @@
         }
 
         .demo-content {
+
+        .demo-content.expanded {
+            padding: 20px;
+            max-height: 300px;
+        }
+        .demo-content {
             background: #f8f9fa;
             padding: 0;
             max-height: 0;
             overflow: hidden;
             transition: all 0.4s ease;
         }
-
-        .demo-content.expanded {
-            padding: 20px;
-            max-height: 300px;
-        }
-
         .demo-intro {
             color: #666;
             margin-bottom: 15px;
@@ -698,7 +698,7 @@
                         <span class="icon">▼</span>
                     </div>
                     <div class="demo-content" id="demoContent">
-                        <div class="demo-intro">
+                    <div class="demo-content" id="demoContent">
                             Click any sample below to see the SKU finder in action. These are real products that will demonstrate the full workflow:
                         </div>
                         <div class="sample-skus">
