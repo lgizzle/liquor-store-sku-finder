@@ -82,7 +82,7 @@
             overflow: hidden;
         }
 
-        .user-dropdown:hover .user-dropdown-content {
+        .user-dropdown.show .user-dropdown-content {
             display: block;
         }
 
@@ -614,7 +614,7 @@
                 {% endif %}
                 
                 <div class="user-dropdown">
-                    <button class="user-dropdown-btn">
+                    <button class="user-dropdown-btn" onclick="toggleUserDropdown()">
                         👤 {{ current_user.email }}
                         {% if current_user.is_superadmin %}
                             <span class="admin-badge">ADMIN</span>
@@ -736,6 +736,22 @@
         let demoMode = false;
         let demoExpanded = false;
 
+        // User dropdown toggle
+        function toggleUserDropdown() {
+            const dropdown = document.querySelector('.user-dropdown');
+            dropdown.classList.toggle('show');
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const dropdown = document.querySelector('.user-dropdown');
+            const button = document.querySelector('.user-dropdown-btn');
+            
+            if (!dropdown.contains(event.target)) {
+                dropdown.classList.remove('show');
+            }
+        });
+
         // Demo section functionality
         function toggleDemo() {
             const toggle = document.querySelector('.demo-toggle');
@@ -755,19 +771,97 @@
             }
         }
 
-        // Demo mode with guided tooltips - FIXED THE JAVASCRIPT BUG HERE
+        // Demo mode with guided tooltips  
         function trySampleSku(sku, productName) {
             document.getElementById('singleSku').value = sku;
             demoMode = true;
             
             showDemoTooltip(`🎯 Great choice! "${productName}" loaded. Click "Search Single SKU" to see the magic happen!`, 3000);
             
-            // Collapse demo section after selection - FIXED THE SYNTAX ERROR
+            // Collapse demo section after selection
             if (demoExpanded) {
                 toggleDemo();
             }
         }
->${product.product_name}</div>
+
+        function showDemoTooltip(message, duration = 2000) {
+            const tooltip = document.getElementById('demoTooltip');
+            tooltip.textContent = message;
+            tooltip.classList.add('show');
+            
+            setTimeout(() => {
+                tooltip.classList.remove('show');
+            }, duration);
+        }
+
+        function showMessage(message, type = 'info') {
+            const messagesDiv = document.getElementById('messages');
+            messagesDiv.innerHTML = `<div class="${type}">${message}</div>`;
+            
+            setTimeout(() => {
+                messagesDiv.innerHTML = '';
+            }, 5000);
+        }
+
+        function clearMessages() {
+            document.getElementById('messages').innerHTML = '';
+        }
+
+        function showLoading(show) {
+            const loading = document.getElementById('loading');
+            loading.style.display = show ? 'block' : 'none';
+        }
+
+        function clearResults() {
+            allResults = [];
+            document.getElementById('resultsSection').style.display = 'none';
+            document.getElementById('browserSection').style.display = 'none';
+            document.getElementById('singleSku').value = '';
+            document.getElementById('batchSkus').value = '';
+            clearMessages();
+        }
+
+        async function showProductBrowser() {
+            const browserSection = document.getElementById('browserSection');
+            const browserGrid = document.getElementById('browserGrid');
+            const browserCount = document.getElementById('browserCount');
+            
+            // Hide results section
+            document.getElementById('resultsSection').style.display = 'none';
+            
+            clearMessages();
+            showLoading(true);
+            
+            try {
+                const response = await fetch('/api/browse-products');
+                const data = await response.json();
+                showLoading(false);
+                
+                browserSection.style.display = 'block';
+                
+                if (data.success && data.products.length > 0) {
+                    browserCount.textContent = `${data.count} products found`;
+                    browserGrid.innerHTML = '';
+                    
+                    data.products.forEach(product => {
+                        const card = document.createElement('div');
+                        card.className = 'product-card';
+                        
+                        const createdDate = new Date(product.created_date * 1000).toLocaleDateString();
+                        
+                        // Generate file links
+                        const filesHtml = product.files.map(file => {
+                            const fileUrl = `/files/${encodeURIComponent(product.folder_name)}/${encodeURIComponent(file)}`;
+                            let icon = '📄';
+                            if (file.includes('.json')) icon = '📋';
+                            else if (file.includes('.txt')) icon = '📝';
+                            else if (file.match(/\.(jpg|jpeg|png|gif|bmp|webp)$/i)) icon = '🖼️';
+                            
+                            return `<a href="${fileUrl}" class="download-btn" target="_blank">${icon} ${file}</a>`;
+                        }).join(' ');
+                        
+                        card.innerHTML = `
+                            <div class="product-title">${product.product_name}</div>
                             
                             <div class="product-meta" style="margin: 10px 0;">
                                 <span class="source-badge">UPC: ${product.upc}</span>
