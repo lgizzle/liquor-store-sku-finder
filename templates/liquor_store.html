@@ -918,31 +918,61 @@
             const sanitizedName = sanitizeFilename(result.title);
             const baseFilename = `${sanitizedSku}--${sanitizedName}`;
             
-            // Download TXT file
-            const txtContent = generateProductText(result);
-            downloadFile(`${baseFilename}--Info.txt`, txtContent, 'text/plain');
-            
-            // Download JSON file
-            const jsonData = {
-                upc: result.sku,
-                name: result.title,
-                description: result.description || '',
-                brand: result.brand || '',
-                category: result.category || '',
-                region: result.region || '',
-                specifications: result.specs || '',
-                image_url: result.image_url || '',
-                source: result.source,
-                created_date: new Date().toISOString()
-            };
-            downloadFile(`${baseFilename}--Data.json`, JSON.stringify(jsonData, null, 2), 'application/json');
-            
-            // Download image if available
-            if (result.image_url) {
-                downloadImageFromUrl(result.image_url, `${baseFilename}--Image.jpg`);
+            // If the backend created files, download them directly from the server
+            if (result.folder_name) {
+                // Download the server-created files
+                const folderName = result.folder_name;
+                
+                // Download TXT file from server
+                downloadServerFile(folderName, `${baseFilename}--Info.txt`);
+                
+                // Download JSON file from server  
+                downloadServerFile(folderName, `${baseFilename}--Data.json`);
+                
+                // Download image file from server if available
+                if (result.image_filename) {
+                    downloadServerFile(folderName, result.image_filename);
+                }
+            } else {
+                // Fallback: create files client-side if server didn't create them
+                // Download TXT file
+                const txtContent = generateProductText(result);
+                downloadFile(`${baseFilename}--Info.txt`, txtContent, 'text/plain');
+                
+                // Download JSON file
+                const jsonData = {
+                    upc: result.sku,
+                    name: result.title,
+                    description: result.description || '',
+                    brand: result.brand || '',
+                    category: result.category || '',
+                    region: result.region || '',
+                    specifications: result.specs || '',
+                    image_url: result.image_url || '',
+                    source: result.source,
+                    created_date: new Date().toISOString()
+                };
+                downloadFile(`${baseFilename}--Data.json`, JSON.stringify(jsonData, null, 2), 'application/json');
+                
+                // Download image if available
+                if (result.image_url) {
+                    downloadImageFromUrl(result.image_url, `${baseFilename}--Image.jpg`);
+                }
             }
             
             showQuickFlash('📦 All files downloaded!');
+        }
+        
+        function downloadServerFile(folderName, filename) {
+            // Download a file that was created by the server
+            const url = `/files/${folderName}/${filename}`;
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.style.display = 'none';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
         }
 
         function downloadFile(filename, content, mimeType) {
