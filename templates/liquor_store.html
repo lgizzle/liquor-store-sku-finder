@@ -1,4 +1,270 @@
-;">
+ (demoExpanded) {
+                toggleDemo();
+            }
+        }
+
+        function showDemoTooltip(message, duration = 2000) {
+            const tooltip = document.getElementById('demoTooltip');
+            tooltip.textContent = message;
+            tooltip.style.left = '50%';
+            tooltip.style.top = '20px';
+            tooltip.style.transform = 'translateX(-50%)';
+            tooltip.classList.add('show');
+            
+            setTimeout(() => {
+                tooltip.classList.remove('show');
+            }, duration);
+        }
+
+        function showMessage(message, type = 'info') {
+            const messagesDiv = document.getElementById('messages');
+            const messageElement = document.createElement('div');
+            messageElement.className = type;
+            messageElement.textContent = message;
+            messagesDiv.appendChild(messageElement);
+
+            setTimeout(() => {
+                if (messageElement.parentNode) {
+                    messageElement.remove();
+                }
+            }, 5000);
+        }
+
+        function clearMessages() {
+            document.getElementById('messages').innerHTML = '';
+        }
+
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+            
+            if (show && demoMode) {
+                showDemoTooltip('🔍 Searching the Go-UPC database for product information...', 2000);
+            }
+        }
+
+        function clearResults() {
+            allResults = [];
+            demoMode = false;
+            document.getElementById('resultsSection').style.display = 'none';
+            document.getElementById('browserSection').style.display = 'none';
+            document.getElementById('singleSku').value = '';
+            document.getElementById('batchSkus').value = '';
+            clearMessages();
+            showMessage('Results cleared', 'info');
+        }
+
+        async function showProductBrowser() {
+            const browserSection = document.getElementById('browserSection');
+            const browserGrid = document.getElementById('browserGrid');
+            const browserCount = document.getElementById('browserCount');
+            
+            // Hide other sections
+            document.getElementById('resultsSection').style.display = 'none';
+            clearMessages();
+            
+            try {
+                browserCount.textContent = 'Loading...';
+                browserSection.style.display = 'block';
+                
+                const response = await fetch('/api/browse-products');
+                const data = await response.json();
+                
+                if (data.success && data.products.length > 0) {
+                    browserCount.textContent = `${data.count} product folders found`;
+                    browserGrid.innerHTML = '';
+                    
+                    data.products.forEach(product => {
+                        const card = document.createElement('div');
+                        card.className = 'product-card';
+                        
+                        const createdDate = new Date(product.created_date * 1000).toLocaleDateString();
+                        
+                        let filesHtml = '<div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 15px;">';
+                        product.files.forEach(file => {
+                            const fileUrl = `/files/${encodeURIComponent(product.folder_name)}/${encodeURIComponent(file)}`;
+                            let icon = '📄';
+                            let bgColor = '#6c757d';
+                            
+                            if (file.includes('json')) {
+                                icon = '📄';
+                                bgColor = '#DC143C';
+                            } else if (file.includes('txt')) {
+                                icon = '📝';
+                                bgColor = '#2c2c2c';
+                            } else if (file.includes('image') || file.match(/\\.(jpg|jpeg|png|gif|webp)$/i)) {
+                                icon = '🖼️';
+                                bgColor = '#DC143C';
+                            }
+                            
+                            filesHtml += `<a href="${fileUrl}" target="_blank" style="display: inline-block; padding: 4px 8px; background: ${bgColor}; color: white; text-decoration: none; border-radius: 4px; font-size: 0.8em; font-weight: 600;">${icon} ${file}</a>`;
+                        });
+                        filesHtml += '</div>';
+                        
+                        card.innerHTML = `
+                            <div class="product-title" style="font-size: 1.1em;">${product.product_name}</div>
+                            
+                            <div class="product-meta" style="margin: 10px 0;">
+                                <span class="source-badge">UPC: ${product.upc}</span>
+                                <span class="sku-display">${createdDate}</span>
+                            </div>
+                            
+                            <div style="background: #f1f3f4; padding: 12px; border-radius: 8px; margin: 10px 0;">
+                                <div style="font-weight: 600; margin-bottom: 8px;">📂 Folder Structure:</div>
+                                <div style="font-family: monospace; color: #666; font-size: 0.9em;">
+                                    📁 ${product.folder_name}/<br>
+                                    ${product.files.map(f => `&nbsp;&nbsp;&nbsp;&nbsp;📄 ${f}`).join('<br>')}
+                                </div>
+                            </div>
+                            
+                            <div style="margin-top: 15px;">
+                                <div style="font-weight: 600; margin-bottom: 8px;">Direct File Access:</div>
+                                ${filesHtml}
+                            </div>
+                        `;
+                        
+                        browserGrid.appendChild(card);
+                    });
+                    
+                    showMessage(`Found ${data.count} organized product folders`, 'success');
+                } else {
+                    browserGrid.innerHTML = '<div class="no-results">No product folders found. Search for some UPCs first!</div>';
+                    browserCount.textContent = '0 products found';
+                    showMessage('This shows previously searched products organized in folders with JSON, TXT, and image files.', 'info');
+                }
+                
+            } catch (error) {
+                showMessage('Error loading product browser: ' + error.message, 'error');
+                browserGrid.innerHTML = '<div class="no-results">Error loading products</div>';
+            }
+        }
+
+        async function searchSingle() {
+            const sku = document.getElementById('singleSku').value.trim();
+            if (!sku) {
+                showMessage('Please enter a SKU or UPC number', 'error');
+                return;
+            }
+
+            clearMessages();
+            showLoading(true);
+            
+            try {
+                const response = await fetch('/api/search', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ sku: sku })
+                });
+
+                const data = await response.json();
+                showLoading(false);
+                
+                if (data.success) {
+                    allResults = data.results;
+                    displayResults(data.results);
+                    
+                    if (demoMode) {
+                        showDemoTooltip('🎉 Success! Found product info and created organized folder with JSON, TXT, and image files!', 4000);
+                        setTimeout(() => {
+                            showDemoTooltip('💡 Try "Browse Products" to see all your searched items organized in folders!', 3000);
+                        }, 4500);
+                        demoMode = false; // End demo mode
+                    }
+                    
+                    showMessage(`Found ${data.results.length} product(s) for SKU: ${sku}`, 'success');
+                } else {
+                    if (demoMode) {
+                        showDemoTooltip('❌ No results found. Try another sample SKU!', 2000);
+                        demoMode = false;
+                    }
+                    showMessage('Error: ' + data.error, 'error');
+                }
+            } catch (error) {
+                showLoading(false);
+                if (demoMode) {
+                    showDemoTooltip('⚠️ Connection error. Check your API keys!', 2000);
+                    demoMode = false;
+                }
+                showMessage('Network error: ' + error.message, 'error');
+            }
+        }
+
+        async function searchBatch() {
+            const skuText = document.getElementById('batchSkus').value.trim();
+            if (!skuText) {
+                showMessage('Please enter SKUs for batch search', 'error');
+                return;
+            }
+
+            const skus = skuText.split('\n').map(s => s.trim()).filter(s => s);
+            if (skus.length === 0) {
+                showMessage('No valid SKUs found', 'error');
+                return;
+            }
+
+            clearMessages();
+            showLoading(true);
+            
+            try {
+                const response = await fetch('/api/batch', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ skus: skus })
+                });
+
+                const data = await response.json();
+                showLoading(false);
+                
+                if (data.success) {
+                    // Flatten batch results
+                    allResults = [];
+                    for (const [sku, results] of Object.entries(data.results)) {
+                        allResults.push(...results);
+                    }
+                    displayResults(allResults);
+                    showMessage(`Processed ${data.processed} SKUs, found ${allResults.length} products`, 'success');
+                } else {
+                    showMessage('Error: ' + data.error, 'error');
+                }
+            } catch (error) {
+                showLoading(false);
+                showMessage('Network error: ' + error.message, 'error');
+            }
+        }
+
+        function displayResults(results) {
+            const resultsSection = document.getElementById('resultsSection');
+            const resultsGrid = document.getElementById('resultsGrid');
+            const resultCount = document.getElementById('resultCount');
+            
+            // Hide browser section
+            document.getElementById('browserSection').style.display = 'none';
+
+            if (results.length === 0) {
+                resultsSection.style.display = 'block';
+                resultsGrid.innerHTML = '<div class="no-results">No products found for the given SKU(s)</div>';
+                resultCount.textContent = '0 products found';
+                return;
+            }
+
+            resultCount.textContent = `${results.length} product(s) found`;
+            resultsGrid.innerHTML = '';
+            resultsSection.style.display = 'block';
+
+            results.forEach((result, index) => {
+                const card = document.createElement('div');
+                card.className = 'product-card';
+
+                // Download section
+                let downloadSection = '';
+                if (result.folder_name) {
+                    downloadSection = `
+                        <div class="download-section">
+                            <div style="margin-bottom: 10px; font-weight: 600; color: #2c2c2c;">📁 Product Package:</div>
+                            <div style="background: #f8f9fa; padding: 10px; border-radius: 6px; margin-bottom: 10px; font-family: monospace; font-size: 0.9em;">
                                 📂 ${result.folder_name}/
                             </div>
                             <div style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;">
