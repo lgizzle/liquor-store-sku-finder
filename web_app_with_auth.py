@@ -462,6 +462,12 @@ def admin_panel():
     users = auth.get_all_users()
     return render_template('admin.html', users=users)
 
+# Health check endpoint for Railway
+@app.route("/health")
+def health_check():
+    """Simple health check endpoint"""
+    return jsonify({"status": "healthy", "service": "sku-finder"}), 200
+
 @app.route("/admin/toggle-user", methods=["POST"])
 @superadmin_required
 def toggle_user():
@@ -535,4 +541,5 @@ def stop_impersonating():
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5001))
-    app.run(debug=True, host="0.0.0.0", port=port)
+    debug = os.environ.get("FLASK_ENV") == "development"
+    app.run(debug=debug, host="0.0.0.0", port=port)

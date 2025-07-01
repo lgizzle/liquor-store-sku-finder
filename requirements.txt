@@ -12,3 +12,4 @@ lxml
 urllib3
 pathlib2
 dataclasses
+werkzeug
