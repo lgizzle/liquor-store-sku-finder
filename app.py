@@ -4,6 +4,14 @@ Production-ready Cheers SKU Finder Application
 Includes all performance and security improvements
 """
 
+# Load environment variables from .env file if it exists
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    # python-dotenv not installed, skip .env loading
+    pass
+
 from web_app_with_auth import app
 from utils import logger
 import os
