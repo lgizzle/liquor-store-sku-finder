@@ -19,3 +19,4 @@ class AuthConfig:
     # App settings
     APP_NAME = 'Cheers SKU Finder'
     FROM_EMAIL = MAIL_USERNAME
+    BASE_URL = os.environ.get('BASE_URL', 'http://localhost:5001')  # Use HTTPS in production

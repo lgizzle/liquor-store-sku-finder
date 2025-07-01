@@ -15,23 +15,21 @@ class SimpleAuth:
     
     def init_db(self):
         """Initialize the users database"""
-        conn = sqlite3.connect(self.config.DATABASE_PATH)
-        cursor = conn.cursor()
+        with sqlite3.connect(self.config.DATABASE_PATH, check_same_thread=False) as conn:
+            cursor = conn.cursor()
         
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                email TEXT UNIQUE NOT NULL,
-                password_hash TEXT NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                is_active BOOLEAN DEFAULT 1,
-                reset_token TEXT,
-                reset_token_expires TIMESTAMP
-            )
-        ''')
-        
-        conn.commit()
-        conn.close()
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS users (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    email TEXT UNIQUE NOT NULL,
+                    password_hash TEXT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    is_active BOOLEAN DEFAULT 1,
+                    reset_token_hash TEXT,
+                    reset_token_expires TIMESTAMP
+                )
+            ''')
+            conn.commit()
     
     def create_user(self, email, password):
         """Create a new user account"""
@@ -92,20 +90,20 @@ class SimpleAuth:
             return {'success': False, 'error': 'Email not found'}
         
         reset_token = secrets.token_urlsafe(32)
+        token_hash = hashlib.sha256(reset_token.encode()).hexdigest()
         expires = datetime.now() + timedelta(hours=1)  # Token expires in 1 hour
         
         try:
-            conn = sqlite3.connect(self.config.DATABASE_PATH)
-            cursor = conn.cursor()
-            
-            cursor.execute('''
-                UPDATE users 
-                SET reset_token = ?, reset_token_expires = ?
-                WHERE email = ?
-            ''', (reset_token, expires, email))
-            
-            conn.commit()
-            conn.close()
+            with sqlite3.connect(self.config.DATABASE_PATH, check_same_thread=False) as conn:
+                cursor = conn.cursor()
+                
+                cursor.execute('''
+                    UPDATE users 
+                    SET reset_token_hash = ?, reset_token_expires = ?
+                    WHERE email = ?
+                ''', (token_hash, expires, email))
+                
+                conn.commit()
             
             # Send reset email
             if self.send_reset_email(email, reset_token):
@@ -152,6 +150,9 @@ class SimpleAuth:
     def send_reset_email(self, email, token):
         """Send password reset email"""
         try:
+            # Get base URL from config (defaults to localhost for dev)
+            base_url = getattr(self.config, 'BASE_URL', 'http://localhost:5001')
+            
             msg = MimeMultipart()
             msg['From'] = self.config.FROM_EMAIL
             msg['To'] = email
@@ -164,7 +165,7 @@ class SimpleAuth:
                 <h2>{self.config.APP_NAME} - Password Reset</h2>
                 <p>You requested a password reset for your account.</p>
                 <p>Click the link below to reset your password (expires in 1 hour):</p>
-                <p><a href="http://localhost:5001/reset-password/{token}">Reset Password</a></p>
+                <p><a href="{base_url}/reset-password/{token}">Reset Password</a></p>
                 <p>If you didn't request this, please ignore this email.</p>
             </body>
             </html>

@@ -1,25 +1,51 @@
-# Virtual environment
-venv/
+# Development files
+test_*.py
+verify_*.py
+example_usage.py
+*_test.py
+*_example.py
+
+# Local data
+logs/
+exports/
+*.log
+*.db
+users.db
+
+# Environment files
+.env.local
+.env.development
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Python cache
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
+.Python
+*.so
 
-# Test files and images
-test_*.py
-verify_*.py
-example_*.py
-test_images/
-example_images/
-.pytest_cache/
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
 
-# Environment and IDE files
-.env
-.DS_Store
-.vscode/
-*.log
+# Backup files
+*.backup
+*.bak
+*~
 
-# Large or temporary files
+# Large media files (keep small logo, ignore large exports)
 *.zip
 *.tar.gz
-sample_skus.csv
+bulk_exports/

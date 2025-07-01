@@ -28,19 +28,10 @@ def get_go_upc_api_key():
     return os.environ.get('GO_UPC_API_KEY', '')
 
 def search_go_upc(sku):
-    """Search for product information using Go-UPC API"""
-    api_key = get_go_upc_api_key()
-    if not api_key:
-        raise Exception("Go-UPC API key not configured")
-    
+    """Search for product information using Go-UPC API with rate limiting"""
+    from api_utils import search_go_upc_with_backoff
     try:
-        req = Request(f'https://go-upc.com/api/v1/code/{sku}')
-        req.add_header('Authorization', f'Bearer {api_key}')
-        
-        content = urlopen(req).read()
-        data = json.loads(content.decode())
-        
-        return data
+        return search_go_upc_with_backoff(sku)
     except Exception as e:
         raise Exception(f"Error calling Go-UPC API: {str(e)}")
 
@@ -129,27 +120,59 @@ def create_product_package(product_data, sku):
         return None
 
 def download_product_image(image_url, product_folder, product_name):
-    """Download image to the specific product folder"""
+    """Download image to the specific product folder - optimized single download"""
     if not image_url:
         return None
         
     try:
-        # Get file extension from URL
-        parsed_url = urlparse(image_url)
-        path = parsed_url.path
-        ext = os.path.splitext(path)[1] if os.path.splitext(path)[1] else '.jpg'
+        import io
+        from PIL import Image
         
-        # Create simple image filename
+        # Single request with proper headers
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        }
+        
+        req = Request(image_url, headers=headers)
+        with urlopen(req, timeout=10) as response:
+            # Read image data once
+            image_data = response.read()
+        
+        # Validate image and get dimensions
+        try:
+            with io.BytesIO(image_data) as img_buffer:
+                img = Image.open(img_buffer)
+                img.verify()  # Verify it's a valid image
+                width, height = img.size
+                
+                # Skip tiny images (likely placeholders)
+                if width < 50 or height < 50:
+                    print(f"Skipping tiny image: {width}x{height}")
+                    return None
+                    
+        except Exception as e:
+            print(f"Invalid image format: {e}")
+            return None
+        
+        # Get file extension from URL or content type
+        parsed_url = urlparse(image_url)
+        ext = os.path.splitext(parsed_url.path)[1]
+        if not ext:
+            ext = '.jpg'  # Default fallback
+        
+        # Create image filename
         image_filename = f"image{ext}"
         local_path = os.path.join(product_folder, image_filename)
         
-        # Download the image
-        urllib.request.urlretrieve(image_url, local_path)
+        # Write image data to file
+        with open(local_path, 'wb') as f:
+            f.write(image_data)
         
+        print(f"Downloaded image: {width}x{height} -> {local_path}")
         return local_path
         
     except Exception as e:
-        print(f"Error downloading image: {e}")
+        print(f"Error downloading image from {image_url}: {e}")
         return None
 
 @app.route("/")
@@ -158,11 +181,19 @@ def index():
 
 @app.route("/api/search", methods=["POST"])
 def search_sku():
+    from utils import validate_sku, handle_errors
+    
     data = request.get_json()
+    if not data:
+        return jsonify({"error": "Invalid JSON data"}), 400
+        
     sku = data.get("sku", "").strip()
 
     if not sku:
         return jsonify({"error": "SKU is required"}), 400
+    
+    if not validate_sku(sku):
+        return jsonify({"error": "Invalid SKU format. Must be 8-20 digits."}), 400
 
     try:
         # Search using Go-UPC API
