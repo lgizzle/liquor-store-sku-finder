@@ -1,4 +1,7 @@
 # Development files
+README_DEV.md
+setup_dev.sh
+start_dev.sh
 test_*.py
 verify_*.py
 example_usage.py

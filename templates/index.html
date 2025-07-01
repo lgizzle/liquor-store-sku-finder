@@ -3,361 +3,153 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SKU Picture Finder</title>
+    <title>Cheers Liquor Mart - SKU Finder</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        :root {
+            --cheers-primary: #c41e3a;
+            --cheers-secondary: #2c3e50;
+            --cheers-gold: #f39c12;
+            --cheers-light: #f8f9fa;
         }
-        
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-        }
-        
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-            overflow: hidden;
-        }
-        
-        .header {
-            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-            color: white;
-            padding: 30px;
-            text-align: center;
-        }
-        
-        .header h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
-        }
-        
-        .header p {
-            opacity: 0.9;
-            font-size: 1.1em;
-        }
-        
-        .main-content {
-            padding: 40px;
-        }
-        
-        .search-section {
-            margin-bottom: 40px;
-        }
-        
-        .search-form {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
-        
-        .input-group {
-            flex: 1;
-            min-width: 250px;
-        }
-        
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #2c3e50;
-        }
-        
-        input[type="text"], textarea {
-            width: 100%;
-            padding: 12px 15px;
-            border: 2px solid #e1e8ed;
-            border-radius: 8px;
-            font-size: 16px;
-            transition: border-color 0.3s ease;
-        }
-        
-        input[type="text"]:focus, textarea:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-        
-        textarea {
-            resize: vertical;
-            min-height: 100px;
-        }
-        
-        .button-group {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-        
-        button {
-            padding: 12px 25px;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-        
-        .btn-secondary {
-            background: #f8f9fa;
-            color: #2c3e50;
-            border: 2px solid #e1e8ed;
-        }
-        
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        }
-        
-        button:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-        
-        .loading {
-            display: none;
-            text-align: center;
-            padding: 20px;
-            color: #667eea;
-        }
-        
-        .spinner {
-            display: inline-block;
-            width: 40px;
+
+        .navbar-brand img {
             height: 40px;
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #667eea;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
+            margin-right: 10px;
         }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        .results-section {
-            margin-top: 40px;
-        }
-        
-        .results-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        
-        .results-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 20px;
-        }
-        
-        .result-card {
-            background: #f8f9fa;
-            border-radius: 12px;
-            padding: 20px;
-            border: 2px solid #e1e8ed;
-            transition: all 0.3s ease;
-        }
-        
-        .result-card:hover {
-            border-color: #667eea;
-            transform: translateY(-5px);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-        }
-        
-        .result-image {
-            width: 100%;
-            height: 200px;
-            object-fit: cover;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            background: #e1e8ed;
-        }
-        
-        .result-title {
-            font-size: 1.1em;
-            font-weight: 600;
-            margin-bottom: 8px;
-            color: #2c3e50;
-        }
-        
-        .result-meta {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-            flex-wrap: wrap;
-            gap: 5px;
-        }
-        
-        .result-source {
-            background: #667eea;
+
+        .btn-cheers {
+            background-color: var(--cheers-primary);
+            border-color: var(--cheers-primary);
             color: white;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 0.8em;
         }
-        
-        .result-confidence {
-            font-size: 0.9em;
-            color: #666;
-        }
-        
-        .result-price {
-            font-weight: 600;
-            color: #27ae60;
-        }
-        
-        .stats-card {
-            background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+
+        .btn-cheers:hover {
+            background-color: #a01729;
+            border-color: #a01729;
             color: white;
-            padding: 20px;
-            border-radius: 12px;
-            margin-bottom: 20px;
         }
-        
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 20px;
-        }
-        
-        .stat-item {
-            text-align: center;
-        }
-        
-        .stat-number {
-            font-size: 2em;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-        
-        .stat-label {
-            opacity: 0.9;
-        }
-        
-        .error {
-            background: #e74c3c;
+
+        .card-header-cheers {
+            background-color: var(--cheers-primary);
             color: white;
-            padding: 15px;
-            border-radius: 8px;
-            margin: 20px 0;
         }
-        
-        .success {
-            background: #27ae60;
-            color: white;
-            padding: 15px;
-            border-radius: 8px;
-            margin: 20px 0;
+
+        .text-cheers {
+            color: var(--cheers-primary);
         }
-        
-        @media (max-width: 768px) {
-            .search-form {
-                flex-direction: column;
-            }
-            
-            .button-group {
-                justify-content: center;
-            }
-            
-            .results-header {
-                flex-direction: column;
-                text-align: center;
-            }
+
+        .bg-cheers-light {
+            background-color: var(--cheers-light);
         }
     </style>
 </head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>🔍 SKU Picture Finder</h1>
-            <p>Find product images using SKU numbers, UPC codes, or product identifiers</p>
+<body class="bg-light">
+    <!-- Header -->
+    <nav class="navbar navbar-dark" style="background-color: var(--cheers-secondary);">
+        <div class="container">
+            <span class="navbar-brand mb-0 h1">
+                <img src="{{ url_for('static', filename='images/cheers-logo.png') }}" alt="Cheers Logo">
+                CHEERS! LIQUOR MART - SKU Finder
+            </span>
+            <div class="d-flex align-items-center text-white">
+                <span class="me-3">Welcome, {{ user_email }}</span>
+                <a href="/logout" class="btn btn-outline-light btn-sm">
+                    <i class="bi bi-box-arrow-right"></i> Logout
+                </a>
+            </div>
         </div>
-        
-        <div class="main-content">
-            <div class="search-section">
-                <div class="search-form">
-                    <div class="input-group">
-                        <label for="singleSku">Single SKU Search</label>
-                        <input type="text" id="singleSku" placeholder="Enter SKU number (e.g., 12345)">
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mt-4">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card shadow">
+                    <div class="card-header card-header-cheers">
+                        <h4 class="mb-0 text-center">
+                            <i class="bi bi-search"></i> Product SKU Lookup
+                        </h4>
                     </div>
-                    <div class="input-group">
-                        <label for="batchSkus">Batch Search (one per line)</label>
-                        <textarea id="batchSkus" placeholder="Enter multiple SKUs, one per line"></textarea>
+                    <div class="card-body">
+                        <!-- Search Form -->
+                        <form id="searchForm">
+                            <div class="mb-3">
+                                <label for="sku" class="form-label">Enter SKU/UPC Code</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="sku" name="sku"
+                                           placeholder="e.g., 049000028911" required>
+                                    <button type="submit" class="btn btn-cheers">
+                                        <i class="bi bi-search"></i> Search
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+
+                        <!-- Loading Spinner -->
+                        <div id="loading" class="text-center d-none">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2">Searching for product...</p>
+                        </div>
+
+                        <!-- Results Section -->
+                        <div id="results" class="d-none">
+                            <hr>
+                            <h5>Product Information</h5>
+                            <div id="productInfo"></div>
+                        </div>
+
+                        <!-- Error Section -->
+                        <div id="error" class="alert alert-danger d-none" role="alert">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            <span id="errorMessage"></span>
+                        </div>
+
+                        <!-- Sample SKUs -->
+                        <div class="mt-4">
+                            <h6>Sample SKUs to try:</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="card bg-light">
+                                        <div class="card-body p-2">
+                                            <small class="text-muted">Tequila Ocho Single Estate Plata 750 Ml</small><br>
+                                            <code class="sample-sku" style="cursor: pointer;">898627001308</code>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="card bg-light">
+                                        <div class="card-body p-2">
+                                            <small class="text-muted">Eagle Rare Single Barrel</small><br>
+                                            <code class="sample-sku" style="cursor: pointer;">088004021344</code>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                
-                <div class="button-group">
-                    <button class="btn-primary" onclick="searchSingle()">Search Single SKU</button>
-                    <button class="btn-primary" onclick="searchBatch()">Batch Search</button>
-                    <button class="btn-secondary" onclick="exportResults()">Export Results</button>
-                    <button class="btn-secondary" onclick="showStats()">Show Statistics</button>
-                </div>
-            </div>
-            
-            <div class="loading" id="loading">
-                <div class="spinner"></div>
-                <p>Searching for images...</p>
-            </div>
-            
-            <div id="messages"></div>
-            
-            <div class="results-section" id="resultsSection" style="display: none;">
-                <div class="results-header">
-                    <h2>Search Results</h2>
-                    <span id="resultCount">0 images found</span>
-                </div>
-                <div class="results-grid" id="resultsGrid"></div>
             </div>
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        let allResults = [];
+        // Handle form submission
+        document.getElementById('searchForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
 
-        function showMessage(message, type = 'info') {
-            const messagesDiv = document.getElementById('messages');
-            const messageElement = document.createElement('div');
-            messageElement.className = type;
-            messageElement.textContent = message;
-            messagesDiv.appendChild(messageElement);
-            
-            setTimeout(() => {
-                messageElement.remove();
-            }, 5000);
-        }
+            const sku = document.getElementById('sku').value.trim();
+            if (!sku) return;
 
-        function showLoading(show) {
-            document.getElementById('loading').style.display = show ? 'block' : 'none';
-        }
+            // Show loading, hide results/error
+            document.getElementById('loading').classList.remove('d-none');
+            document.getElementById('results').classList.add('d-none');
+            document.getElementById('error').classList.add('d-none');
 
-        async function searchSingle() {
-            const sku = document.getElementById('singleSku').value.trim();
-            if (!sku) {
-                showMessage('Please enter a SKU number', 'error');
-                return;
-            }
-
-            showLoading(true);
             try {
                 const response = await fetch('/api/search', {
                     method: 'POST',
@@ -368,171 +160,93 @@
                 });
 
                 const data = await response.json();
-                if (data.success) {
-                    allResults = data.results;
-                    displayResults(data.results);
-                    showMessage(`Found ${data.count} images for SKU: ${sku}`, 'success');
+
+                if (response.ok && data.success) {
+                    displayProduct(data);
                 } else {
-                    showMessage(data.error || 'Search failed', 'error');
+                    showError(data.error || 'Search failed');
                 }
             } catch (error) {
-                showMessage('Network error: ' + error.message, 'error');
+                showError('Network error: ' + error.message);
             } finally {
-                showLoading(false);
+                document.getElementById('loading').classList.add('d-none');
             }
-        }
+        });
 
-        async function searchBatch() {
-            const skuText = document.getElementById('batchSkus').value.trim();
-            if (!skuText) {
-                showMessage('Please enter SKU numbers for batch search', 'error');
-                return;
-            }
+        // Display product information
+        function displayProduct(data) {
+            const product = data.product;
+            const productInfo = document.getElementById('productInfo');
 
-            const skus = skuText.split('\n').map(s => s.trim()).filter(s => s);
-            if (skus.length === 0) {
-                showMessage('No valid SKUs found', 'error');
-                return;
-            }
-
-            showLoading(true);
-            try {
-                const response = await fetch('/api/batch', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ skus: skus })
-                });
-
-                const data = await response.json();
-                if (data.success) {
-                    // Flatten batch results
-                    allResults = [];
-                    for (const [sku, results] of Object.entries(data.results)) {
-                        allResults.push(...results);
-                    }
-                    displayResults(allResults);
-                    showMessage(`Processed ${data.processed} SKUs, found ${allResults.length} images`, 'success');
-                } else {
-                    showMessage(data.error || 'Batch search failed', 'error');
-                }
-            } catch (error) {
-                showMessage('Network error: ' + error.message, 'error');
-            } finally {
-                showLoading(false);
-            }
-        }
-
-        function displayResults(results) {
-            const resultsSection = document.getElementById('resultsSection');
-            const resultsGrid = document.getElementById('resultsGrid');
-            const resultCount = document.getElementById('resultCount');
-
-            if (results.length === 0) {
-                resultsSection.style.display = 'none';
-                return;
-            }
-
-            resultCount.textContent = `${results.length} images found`;
-            resultsGrid.innerHTML = '';
-
-            results.forEach(result => {
-                const card = document.createElement('div');
-                card.className = 'result-card';
-                
-                card.innerHTML = `
-                    <img src="${result.image_url}" alt="${result.title}" class="result-image" 
-                         onerror="this.src='data:image/svg+xml,<svg xmlns=\\"http://www.w3.org/2000/svg\\" width=\\"100\\" height=\\"100\\"><rect width=\\"100\\" height=\\"100\\" fill=\\"%23ddd\\"/><text x=\\"50%\\" y=\\"50%\\" text-anchor=\\"middle\\" dy=\\".3em\\">No Image</text></svg>'">
-                    <div class="result-title">${result.title}</div>
-                    <div class="result-meta">
-                        <span class="result-source">${result.source}</span>
-                        <span class="result-confidence">Confidence: ${(result.confidence * 100).toFixed(0)}%</span>
-                    </div>
-                    <div>SKU: ${result.sku}</div>
-                    ${result.price ? `<div class="result-price">Price: $${result.price}</div>` : ''}
-                    ${result.description ? `<div>Brand: ${result.description}</div>` : ''}
-                `;
-                
-                resultsGrid.appendChild(card);
-            });
-
-            resultsSection.style.display = 'block';
-        }
-
-        async function exportResults() {
-            if (allResults.length === 0) {
-                showMessage('No results to export', 'error');
-                return;
-            }
-
-            try {
-                const response = await fetch('/api/export');
-                const data = await response.json();
-                if (data.success) {
-                    showMessage('Results exported successfully to: ' + data.filename, 'success');
-                } else {
-                    showMessage(data.error || 'Export failed', 'error');
-                }
-            } catch (error) {
-                showMessage('Network error: ' + error.message, 'error');
-            }
-        }
-
-        async function showStats() {
-            try {
-                const response = await fetch('/api/stats');
-                const stats = await response.json();
-                
-                if (stats.total_images) {
-                    const statsHtml = `
-                        <div class="stats-card">
-                            <h3 style="margin-bottom: 20px; text-align: center;">Search Statistics</h3>
-                            <div class="stats-grid">
-                                <div class="stat-item">
-                                    <div class="stat-number">${stats.total_images}</div>
-                                    <div class="stat-label">Total Images</div>
-                                </div>
-                                <div class="stat-item">
-                                    <div class="stat-number">${stats.skus_processed}</div>
-                                    <div class="stat-label">SKUs Processed</div>
-                                </div>
-                                <div class="stat-item">
-                                    <div class="stat-number">${(stats.avg_confidence * 100).toFixed(0)}%</div>
-                                    <div class="stat-label">Avg Confidence</div>
-                                </div>
-                            </div>
-                            <h4 style="margin: 20px 0 10px 0;">Sources:</h4>
-                            ${Object.entries(stats.sources).map(([source, count]) => 
-                                `<div>${source}: ${count} images</div>`
-                            ).join('')}
+            productInfo.innerHTML = `
+                <div class="row">
+                    <div class="col-md-8">
+                        <h6>Product Name</h6>
+                        <div class="mb-3">
+                            <textarea class="form-control mb-2" rows="2" readonly>${product.name}</textarea>
+                            <button class="btn btn-cheers btn-sm" onclick="copyToClipboard('${product.name}')">
+                                <i class="bi bi-clipboard"></i> Copy
+                            </button>
                         </div>
-                    `;
-                    
-                    const messagesDiv = document.getElementById('messages');
-                    const existingStats = messagesDiv.querySelector('.stats-card');
-                    if (existingStats) {
-                        existingStats.remove();
-                    }
-                    messagesDiv.insertAdjacentHTML('beforeend', statsHtml);
-                } else {
-                    showMessage('No statistics available yet', 'error');
-                }
-            } catch (error) {
-                showMessage('Failed to load statistics: ' + error.message, 'error');
-            }
+
+                        ${product.description ? `
+                        <h6>Description</h6>
+                        <div class="mb-3">
+                            <textarea class="form-control mb-2" rows="8" readonly>${product.description}</textarea>
+                            <button class="btn btn-cheers btn-sm" onclick="copyToClipboard('${product.description}')">
+                                <i class="bi bi-clipboard"></i> Copy
+                            </button>
+                        </div>
+                        ` : ''}
+
+                        ${product.brand ? `<p><strong>Brand:</strong> ${product.brand}</p>` : ''}
+                        ${product.category ? `<p><strong>Category:</strong> ${product.category}</p>` : ''}
+                    </div>
+                    <div class="col-md-4">
+                        ${product.imageUrl ? `
+                        <img src="${product.imageUrl}" class="img-fluid rounded" alt="Product Image">
+                        <div class="mt-2">
+                            <a href="/download-image?url=${encodeURIComponent(product.imageUrl)}&sku=${encodeURIComponent(data.sku || 'product')}" class="btn btn-cheers btn-sm">
+                                <i class="bi bi-download"></i> Download Image
+                            </a>
+                        </div>
+                        ` : '<p class="text-muted">No image available</p>'}
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('results').classList.remove('d-none');
         }
 
-        // Clear messages when starting new search
-        function clearMessages() {
-            document.getElementById('messages').innerHTML = '';
+        // Show error message
+        function showError(message) {
+            document.getElementById('errorMessage').textContent = message;
+            document.getElementById('error').classList.remove('d-none');
         }
 
-        // Add event listeners for Enter key
-        document.getElementById('singleSku').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                searchSingle();
-            }
+        // Copy to clipboard function
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                // Show success feedback
+                const toast = document.createElement('div');
+                toast.className = 'toast-container position-fixed top-0 end-0 p-3';
+                toast.innerHTML = `
+                    <div class="toast show" role="alert">
+                        <div class="toast-body">
+                            <i class="bi bi-check-circle text-success"></i> Copied to clipboard!
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(toast);
+                setTimeout(() => toast.remove(), 2000);
+            });
+        }
+
+        // Handle sample SKU clicks
+        document.querySelectorAll('.sample-sku').forEach(element => {
+            element.addEventListener('click', function() {
+                document.getElementById('sku').value = this.textContent;
+            });
         });
     </script>
 </body>

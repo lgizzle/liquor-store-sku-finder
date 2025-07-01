@@ -4,161 +4,81 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Cheers Liquor Mart SKU Finder</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        :root {
+            --cheers-primary: #c41e3a;
+            --cheers-secondary: #2c3e50;
+            --cheers-gold: #f39c12;
+            --cheers-light: #f8f9fa;
         }
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #2c2c2c 0%, #1a1a1a 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-
-        .auth-container {
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
-            overflow: hidden;
-            width: 100%;
-            max-width: 400px;
-        }
-
-        .auth-header {
-            background: linear-gradient(135deg, #DC143C 0%, #8B0000 100%);
+        .btn-cheers {
+            background-color: var(--cheers-primary);
+            border-color: var(--cheers-primary);
             color: white;
-            padding: 30px;
-            text-align: center;
         }
 
-        .logo {
-            font-size: 1.8em;
-            font-weight: bold;
+        .btn-cheers:hover {
+            background-color: #a01729;
+            border-color: #a01729;
+            color: white;
+        }
+
+        .card-header-cheers {
+            background-color: var(--cheers-primary);
+            color: white;
+        }
+
+        .logo-container img {
+            height: 60px;
             margin-bottom: 10px;
-        }
-
-        .auth-form {
-            padding: 40px;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #2c2c2c;
-        }
-
-        input[type="email"], input[type="password"] {
-            width: 100%;
-            padding: 12px 15px;
-            border: 2px solid #e1e8ed;
-            border-radius: 8px;
-            font-size: 16px;
-            transition: border-color 0.3s ease;
-        }
-
-        input[type="email"]:focus, input[type="password"]:focus {
-            outline: none;
-            border-color: #DC143C;
-            box-shadow: 0 0 0 3px rgba(220, 20, 60, 0.1);
-        }
-
-        .btn {
-            width: 100%;
-            padding: 12px;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #DC143C 0%, #8B0000 100%);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(220, 20, 60, 0.3);
-        }
-
-        .auth-links {
-            text-align: center;
-            margin-top: 20px;
-        }
-
-        .auth-links a {
-            color: #DC143C;
-            text-decoration: none;
-            font-weight: 600;
-        }
-
-        .auth-links a:hover {
-            text-decoration: underline;
-        }
-
-        .message {
-            padding: 10px;
-            border-radius: 6px;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-
-        .error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-
-        .success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
         }
     </style>
 </head>
-<body>
-    <div class="auth-container">
-        <div class="auth-header">
-            <div class="logo">CHEERS! LIQUOR MART</div>
-            <p>SKU Finder - Login</p>
-        </div>
-        
-        <div class="auth-form">
-            {% if message %}
-                <div class="message {{ message_type }}">{{ message }}</div>
-            {% endif %}
-            
-            <form method="POST">
-                <div class="form-group">
-                    <label for="email">Email Address</label>
-                    <input type="email" id="email" name="email" required>
+<body class="bg-light">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-6 col-lg-4">
+                <div class="card mt-5 shadow">
+                    <div class="card-header bg-primary text-white text-center">
+                        <h4><i class="bi bi-shop"></i> CHEERS! LIQUOR MART</h4>
+                        <p class="mb-0">SKU Finder - Login</p>
+                    </div>
+                    <div class="card-body">
+                        {% with messages = get_flashed_messages(with_categories=true) %}
+                            {% if messages %}
+                                {% for category, message in messages %}
+                                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                                        {{ message }}
+                                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                        {% endwith %}
+
+                        <form method="POST">
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Email Address</label>
+                                <input type="email" class="form-control" id="email" name="email"
+                                       value="les.gutches@gmail.com" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="password" class="form-label">Password</label>
+                                <input type="password" class="form-control" id="password" name="password"
+                                       value="CheersBusiness2024" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="bi bi-box-arrow-in-right"></i> Login
+                            </button>
+                        </form>
+                    </div>
                 </div>
-                
-                <div class="form-group">
-                    <label for="password">Password</label>
-                    <input type="password" id="password" name="password" required>
-                </div>
-                
-                <button type="submit" class="btn btn-primary">Login</button>
-            </form>
-            
-            <div class="auth-links">
-                <p><a href="/register">Create Account</a> | <a href="/forgot-password">Forgot Password?</a></p>
             </div>
         </div>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
