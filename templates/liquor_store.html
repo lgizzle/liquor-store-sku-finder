@@ -832,13 +832,19 @@
             clearMessages();
         }
 
+                    if (flash.parentNode) {
+                        flash.remove();
+                    }
+                }, 300);
+            }, 1200);
+        }
         // Copy product info to clipboard
         function copyProductInfo(result) {
             const productText = generateProductText(result);
             
             if (navigator.clipboard && window.isSecureContext) {
                 navigator.clipboard.writeText(productText).then(() => {
-                    showMessage('✅ Product information copied to clipboard!', 'success');
+                    showQuickFlash('✅ Copied!');
                 }).catch(err => {
                     console.error('Clipboard error:', err);
                     fallbackCopyToClipboard(productText);
@@ -860,43 +866,37 @@
             
             try {
                 document.execCommand('copy');
-                showMessage('✅ Product information copied to clipboard!', 'success');
+                showQuickFlash('✅ Copied!');
             } catch (err) {
-                console.error('Fallback copy failed:', err);
-                showMessage('❌ Could not copy to clipboard', 'error');
-            } finally {
-                document.body.removeChild(textArea);
-            }
-        }
 
+            return text;
+        }
         function generateProductText(result) {
-            let text = `${result.title}\n`;
-            text += `SKU/UPC: ${result.sku}\n`;
-            text += `Source: ${result.source}\n\n`;
+            let text = `${result.title}\n\n`;
             
             if (result.description && result.description.trim()) {
-                text += `Description:\n${result.description}\n\n`;
-            }
-            
-            if (result.brand && result.brand.trim()) {
-                text += `Brand: ${result.brand}\n`;
-            }
-            if (result.category && result.category.trim()) {
-                text += `Category: ${result.category}\n`;
-            }
-            if (result.region && result.region.trim()) {
-                text += `Region: ${result.region}\n`;
-            }
-            if (result.specs && result.specs.trim()) {
-                text += `Specifications: ${result.specs}\n`;
-            }
-            
-            if (result.image_url) {
-                text += `\nImage URL: ${result.image_url}\n`;
+                text += `${result.description}`;
             }
             
             return text;
         }
+        function generateProductText(result) {
+            let text = `${result.title}\n\n`;
+            
+            if (result.description && result.description.trim()) {
+                text += `${result.description}`;
+            }
+            
+            return text;
+        }
+        function generateProductText(result) {
+            let text = `${result.title}\n\n`;
+            
+            if (result.description && result.description.trim()) {
+                text += `${result.description}`;
+            }
+            
+            return text;
 
         // Sanitize filename for downloads
         function sanitizeFilename(name) {
@@ -933,7 +933,7 @@
                 downloadImageFromUrl(result.image_url, `${baseFilename}--Image.jpg`);
             }
             
-            showMessage('📦 All files downloaded! Check your Downloads folder.', 'success');
+            showQuickFlash('📦 All files downloaded!');
         }
 
         function downloadFile(filename, content, mimeType) {
@@ -1115,12 +1115,12 @@
                 const sanitizedName = sanitizeFilename(result.title);
                 
                 card.innerHTML = `
-                    <img src="${result.image_url}" 
-                         alt="${result.title}" 
-                         class="product-image"
-                         onerror="this.src='data:image/svg+xml,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"250\" height=\"250\"><rect width=\"250\" height=\"250\" fill=\"%23e1e8ed\"/><text x=\"50%\" y=\"50%\" text-anchor=\"middle\" dy=\".3em\" fill=\"%23666\" font-size=\"16\">No Image Available</text></svg>'">
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-bottom: 15px;">
+                        <button class="download-btn copy-btn" onclick="copyProductInfo(allResults[${index}])">📋 Copy Text</button>
+                        <button class="download-btn" onclick="downloadAllFiles(allResults[${index}])">📦 Download All Files</button>
+                    </div>
                     
-                    <div class="product-title">${result.title}</div>
+                    <img src="${result.image_url}" 
                     
                     <div class="product-meta">
                         <span class="source-badge">${result.source}</span>
@@ -1128,21 +1128,21 @@
                     </div>
 
                     ${descriptionHtml}
-                    ${detailsHtml}
-                    
-                    <div class="download-section">
-                        <div style="margin-bottom: 15px; font-weight: 600; color: #2c2c2c;">📁 Files will be named:</div>
-                        <div class="file-preview">
-                            📂 ${sanitizedSku}--${sanitizedName}--Info.txt<br>
-                            📂 ${sanitizedSku}--${sanitizedName}--Data.json<br>
-                            📂 ${sanitizedSku}--${sanitizedName}--Image.jpg
-                        </div>
-                        <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 15px;">
-                            <button class="download-btn copy-btn" onclick="copyProductInfo(allResults[${index}])">📋 Copy Text</button>
-                            <button class="download-btn" onclick="downloadAllFiles(allResults[${index}])">📦 Download All Files</button>
-                        </div>
+                        📂 ${sanitizedSku}--${sanitizedName}--Data.json<br>
+                        📂 ${sanitizedSku}--${sanitizedName}--Image.jpg
                     </div>
                 `;
+                    ${detailsHtml}
+                    
+                    <div style="margin-bottom: 15px; font-weight: 600; color: #2c2c2c;">📁 Files will be named:</div>
+                    <div class="file-preview">
+                        📂 ${sanitizedSku}--${sanitizedName}--Info.txt<br>
+                        📂 ${sanitizedSku}--${sanitizedName}--Data.json<br>
+                        📂 ${sanitizedSku}--${sanitizedName}--Image.jpg
+                    </div>
+                `;
+                    ${detailsHtml}
+                    
 
                 resultsGrid.appendChild(card);
             });
