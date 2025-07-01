@@ -17,12 +17,29 @@ app.secret_key = AuthConfig().SECRET_KEY
 # Initialize authentication
 auth = SimpleAuth()
 
+# Create superadmin on startup
+auth.create_superadmin_if_not_exists()
+
 # Login required decorator
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if 'user_email' not in session:
             return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+# Superadmin required decorator
+def superadmin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_email' not in session:
+            return redirect(url_for('login'))
+        
+        user = auth.get_user_by_email(session['user_email'])
+        if not user or not user.get('is_superadmin'):
+            return jsonify({'error': 'Access denied'}), 403
+        
         return f(*args, **kwargs)
     return decorated_function
 
@@ -227,7 +244,9 @@ def download_product_image(image_url, product_folder, product_name):
 @app.route("/")
 @login_required
 def index():
-    return render_template("liquor_store.html")
+    # Get current user info to pass to template
+    current_user = auth.get_user_by_email(session['user_email'])
+    return render_template("liquor_store.html", current_user=current_user)
 
 @app.route("/api/search", methods=["POST"])
 @login_required
@@ -434,6 +453,85 @@ def serve_product_file(folder_name, filename):
         
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+# Admin Routes
+@app.route("/admin")
+@superadmin_required
+def admin_panel():
+    """Admin panel for user management"""
+    users = auth.get_all_users()
+    return render_template('admin.html', users=users)
+
+@app.route("/admin/toggle-user", methods=["POST"])
+@superadmin_required
+def toggle_user():
+    """Enable/disable user account"""
+    data = request.get_json()
+    user_id = data.get('user_id')
+    is_active = data.get('is_active')
+    
+    result = auth.toggle_user_status(user_id, is_active)
+    return jsonify(result)
+
+@app.route("/admin/reset-password", methods=["POST"])
+@superadmin_required
+def admin_reset_password():
+    """Reset user password"""
+    user_id = request.form.get('user_id')
+    new_password = request.form.get('new_password')
+    
+    if not user_id or not new_password:
+        return render_template('admin.html', 
+                             users=auth.get_all_users(),
+                             message="User ID and password are required", 
+                             message_type="error")
+    
+    result = auth.reset_user_password(user_id, new_password)
+    
+    if result['success']:
+        message = "Password reset successfully"
+        message_type = "success"
+    else:
+        message = f"Error: {result['error']}"
+        message_type = "error"
+    
+    return render_template('admin.html', 
+                         users=auth.get_all_users(),
+                         message=message, 
+                         message_type=message_type)
+
+@app.route("/admin/impersonate/<int:user_id>")
+@superadmin_required
+def impersonate_user(user_id):
+    """Impersonate a user (superadmin only)"""
+    # Store original admin session
+    session['original_admin_email'] = session['user_email']
+    
+    # Find the user to impersonate
+    users = auth.get_all_users()
+    target_user = next((u for u in users if u['id'] == user_id), None)
+    
+    if not target_user:
+        return render_template('admin.html', 
+                             users=auth.get_all_users(),
+                             message="User not found", 
+                             message_type="error")
+    
+    # Switch session to target user
+    session['user_email'] = target_user['email']
+    session['impersonating'] = True
+    
+    return redirect(url_for('index'))
+
+@app.route("/admin/stop-impersonating")
+def stop_impersonating():
+    """Stop impersonating and return to admin account"""
+    if 'original_admin_email' in session and session.get('impersonating'):
+        session['user_email'] = session['original_admin_email']
+        session.pop('original_admin_email', None)
+        session.pop('impersonating', None)
+    
+    return redirect(url_for('admin_panel'))
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5001))

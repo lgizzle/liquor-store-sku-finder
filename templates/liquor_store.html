@@ -35,6 +35,102 @@
             position: relative;
         }
 
+        .admin-nav {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .user-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .user-dropdown-btn {
+            color: white;
+            text-decoration: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            background: rgba(255,255,255,0.1);
+            transition: all 0.3s ease;
+            font-weight: 600;
+            font-size: 0.9em;
+            cursor: pointer;
+            border: none;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .user-dropdown-btn:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .user-dropdown-content {
+            display: none;
+            position: absolute;
+            right: 0;
+            background-color: white;
+            min-width: 200px;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            border-radius: 8px;
+            z-index: 1;
+            border: 1px solid #ddd;
+            overflow: hidden;
+        }
+
+        .user-dropdown:hover .user-dropdown-content {
+            display: block;
+        }
+
+        .user-dropdown-content a {
+            color: #333;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+            transition: background-color 0.3s;
+            font-size: 0.9em;
+        }
+
+        .user-dropdown-content a:hover {
+            background-color: #f1f1f1;
+        }
+
+        .user-dropdown-content .dropdown-header {
+            padding: 8px 16px;
+            background-color: #f8f9fa;
+            font-weight: bold;
+            color: #666;
+            font-size: 0.8em;
+            border-bottom: 1px solid #eee;
+        }
+
+        .impersonation-banner {
+            background: #FF6B6B;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            margin-right: 10px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .admin-badge {
+            background: #FFD700;
+            color: #DC143C;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 0.8em;
+            padding: 4px 8px;
+            border-radius: 3px;
+            margin-left: 8px;
+        }
+
         .logo {
             display: flex;
             align-items: center;
@@ -508,6 +604,46 @@
 <body>
     <div class="container">
         <div class="header">
+            <!-- Admin Navigation -->
+            {% if current_user %}
+            <div class="admin-nav">
+                {% if session.get('impersonating') %}
+                    <div class="impersonation-banner">
+                        🎭 Impersonating
+                    </div>
+                {% endif %}
+                
+                <div class="user-dropdown">
+                    <button class="user-dropdown-btn">
+                        👤 {{ current_user.email }}
+                        {% if current_user.is_superadmin %}
+                            <span class="admin-badge">ADMIN</span>
+                        {% endif %}
+                        ▼
+                    </button>
+                    <div class="user-dropdown-content">
+                        <div class="dropdown-header">
+                            {% if session.get('impersonating') %}
+                                🎭 Viewing as User
+                            {% else %}
+                                {% if current_user.is_superadmin %}🛡️ Administrator{% else %}👤 User Account{% endif %}
+                            {% endif %}
+                        </div>
+                        
+                        {% if session.get('impersonating') %}
+                            <a href="/admin/stop-impersonating">🔙 Stop Impersonating</a>
+                            <a href="/admin">⚙️ Back to Admin Panel</a>
+                        {% else %}
+                            {% if current_user.is_superadmin %}
+                                <a href="/admin">🛡️ Admin Panel</a>
+                            {% endif %}
+                        {% endif %}
+                        
+                        <a href="/logout">🚪 Logout</a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
             <div class="logo">
                 <img src="/static/images/cheers-logo.png" alt="Cheers Liquor Mart" class="logo-image">
                 <div class="logo-text">CHEERS! LIQUOR MART</div>

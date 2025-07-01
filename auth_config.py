@@ -20,3 +20,7 @@ class AuthConfig:
     APP_NAME = 'Cheers SKU Finder'
     FROM_EMAIL = MAIL_USERNAME
     BASE_URL = os.environ.get('BASE_URL', 'http://localhost:5001')  # Use HTTPS in production
+    
+    # Superadmin settings
+    SUPERADMIN_EMAIL = 'les.gutches@gmail.com'
+    SUPERADMIN_PASSWORD = 'CheersBusiness2024'

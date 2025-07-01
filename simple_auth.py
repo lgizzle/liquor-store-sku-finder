@@ -2,8 +2,8 @@ import sqlite3
 import hashlib
 import secrets
 import smtplib
-from email.mime.text import MimeText
-from email.mime.multipart import MimeMultipart
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from datetime import datetime, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
 from auth_config import AuthConfig
@@ -25,11 +25,35 @@ class SimpleAuth:
                     password_hash TEXT NOT NULL,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     is_active BOOLEAN DEFAULT 1,
+                    is_superadmin BOOLEAN DEFAULT 0,
                     reset_token_hash TEXT,
                     reset_token_expires TIMESTAMP
                 )
             ''')
             conn.commit()
+    
+    def create_superadmin_if_not_exists(self):
+        """Create superadmin account on first run"""
+        superadmin_email = self.config.SUPERADMIN_EMAIL
+        
+        if self.get_user_by_email(superadmin_email):
+            return  # Superadmin already exists
+        
+        try:
+            with sqlite3.connect(self.config.DATABASE_PATH, check_same_thread=False) as conn:
+                cursor = conn.cursor()
+                password_hash = generate_password_hash(self.config.SUPERADMIN_PASSWORD)
+                
+                cursor.execute('''
+                    INSERT INTO users (email, password_hash, is_superadmin)
+                    VALUES (?, ?, 1)
+                ''', (superadmin_email, password_hash))
+                
+                conn.commit()
+                print(f"Created superadmin account: {superadmin_email}")
+                
+        except Exception as e:
+            print(f"Error creating superadmin: {e}")
     
     def create_user(self, email, password):
         """Create a new user account"""
@@ -80,8 +104,62 @@ class SimpleAuth:
             conn.close()
             
             return dict(user) if user else None
-        except Exception:
+        except Exception as e:
+            print(f"Error getting user: {e}")
             return None
+    def get_all_users(self):
+        """Get all users (superadmin only)"""
+        try:
+            with sqlite3.connect(self.config.DATABASE_PATH, check_same_thread=False) as conn:
+                conn.row_factory = sqlite3.Row
+                cursor = conn.cursor()
+                
+                cursor.execute('''
+                    SELECT id, email, created_at, is_active, is_superadmin
+                    FROM users ORDER BY created_at DESC
+                ''')
+                
+                users = [dict(row) for row in cursor.fetchall()]
+                return users
+                
+        except Exception as e:
+            print(f"Error getting users: {e}")
+            return []
+    
+    def toggle_user_status(self, user_id, is_active):
+        """Enable/disable user account"""
+        try:
+            with sqlite3.connect(self.config.DATABASE_PATH, check_same_thread=False) as conn:
+                cursor = conn.cursor()
+                
+                cursor.execute('''
+                    UPDATE users SET is_active = ? WHERE id = ?
+                ''', (is_active, user_id))
+                
+                conn.commit()
+                return {'success': True}
+                
+        except Exception as e:
+            return {'success': False, 'error': str(e)}
+    
+    def reset_user_password(self, user_id, new_password):
+        """Reset user password (superadmin function)"""
+        try:
+            with sqlite3.connect(self.config.DATABASE_PATH, check_same_thread=False) as conn:
+                cursor = conn.cursor()
+                password_hash = generate_password_hash(new_password)
+                
+                cursor.execute('''
+                    UPDATE users 
+                    SET password_hash = ?, reset_token_hash = NULL, reset_token_expires = NULL
+                    WHERE id = ?
+                ''', (password_hash, user_id))
+                
+                conn.commit()
+                return {'success': True}
+                
+        except Exception as e:
+            return {'success': False, 'error': str(e)}
     
     def generate_reset_token(self, email):
         """Generate password reset token"""
@@ -153,7 +231,7 @@ class SimpleAuth:
             # Get base URL from config (defaults to localhost for dev)
             base_url = getattr(self.config, 'BASE_URL', 'http://localhost:5001')
             
-            msg = MimeMultipart()
+            msg = MIMEMultipart()
             msg['From'] = self.config.FROM_EMAIL
             msg['To'] = email
             msg['Subject'] = f'{self.config.APP_NAME} - Password Reset'
@@ -171,7 +249,7 @@ class SimpleAuth:
             </html>
             '''
             
-            msg.attach(MimeText(html_body, 'html'))
+            msg.attach(MIMEText(html_body, 'html'))
             
             # Send email
             server = smtplib.SMTP(self.config.MAIL_SERVER, self.config.MAIL_PORT)
