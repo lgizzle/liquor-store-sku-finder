@@ -119,15 +119,11 @@ def create_product_package(product_data, sku):
                         f.write(f"  {spec[0]}: {spec[1]}\\n")
             
             f.write(f"\\nImage URL: {product_info['image_url']}\\n")
-            f.write(f"Local Image: {product_info['local_image_path'] or 'Not available'}\\n")
         
         return {
             "folder_path": product_folder,
-            "image_filename": os.path.basename(image_path) if image_path else None,
-            "json_path": json_path,
-            "txt_path": txt_path
+            "image_filename": os.path.basename(image_path) if image_path else None
         }
-        
     except Exception as e:
         print(f"Error creating product package: {e}")
         return None
