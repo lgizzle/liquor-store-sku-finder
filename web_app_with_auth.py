@@ -142,7 +142,7 @@ def sanitize_filename(filename):
     # Limit length to prevent filesystem issues
     return sanitized[:100]
 
-def create_product_package(product_data, sku):
+def create_product_package(product_data, sku, full_api_response=None):
     """Create a self-contained product folder with all data and assets"""
     if not product_data:
         return None
@@ -159,16 +159,22 @@ def create_product_package(product_data, sku):
             os.makedirs(product_folder)
         
         # Download the product image
-        image_path = None
+        image_filename = None
         if product_data.get('imageUrl'):
             image_path = download_product_image(
                 product_data['imageUrl'], 
                 product_folder, 
-                product_data.get('name', 'product')
+                f"{sku}--{sanitized_name}--Image"
             )
+            if image_path:
+                image_filename = os.path.basename(image_path)
         
-        # Create comprehensive product info JSON
-        product_info = {
+        # Save COMPLETE API response as JSON (matching frontend expectations)
+        json_filename = f"{sku}--{sanitized_name}--Data.json"
+        json_path = os.path.join(product_folder, json_filename)
+        
+        # Save the complete API response or create comprehensive data
+        json_data = full_api_response if full_api_response else {
             "upc": sku,
             "name": product_data.get('name', ''),
             "description": product_data.get('description', ''),
@@ -177,47 +183,59 @@ def create_product_package(product_data, sku):
             "region": product_data.get('region', ''),
             "specifications": product_data.get('specs', []),
             "image_url": product_data.get('imageUrl', ''),
-            "local_image_path": os.path.basename(image_path) if image_path else None,
             "barcode_url": product_data.get('barcodeUrl', ''),
             "created_date": datetime.now().isoformat(),
-            "source": "Go-UPC API"
+            "source": "Go-UPC API",
+            "local_image_filename": image_filename
         }
         
-        # Save JSON file
-        json_path = os.path.join(product_folder, 'product_info.json')
         with open(json_path, 'w', encoding='utf-8') as f:
-            json.dump(product_info, f, indent=2, ensure_ascii=False)
+            json.dump(json_data, f, indent=2, ensure_ascii=False)
         
-        # Save human-readable text file
-        txt_path = os.path.join(product_folder, 'product_info.txt')
+        # Save human-readable text file (matching frontend expectations)
+        txt_filename = f"{sku}--{sanitized_name}--Info.txt"
+        txt_path = os.path.join(product_folder, txt_filename)
+        
         with open(txt_path, 'w', encoding='utf-8') as f:
-            f.write("PRODUCT INFORMATION\\n")
-            f.write("==================\\n\\n")
-            f.write(f"UPC: {sku}\\n")
-            f.write(f"Name: {product_info['name']}\\n")
-            f.write(f"Brand: {product_info['brand']}\\n")
-            f.write(f"Category: {product_info['category']}\\n")
-            f.write(f"Region: {product_info['region']}\\n\\n")
-            f.write(f"Description:\\n{product_info['description']}\\n\\n")
+            f.write("PRODUCT INFORMATION\n")
+            f.write("==================\n\n")
+            f.write(f"UPC: {sku}\n")
+            f.write(f"Name: {product_data.get('name', '')}\n")
+            f.write(f"Brand: {product_data.get('brand', '')}\n")
+            f.write(f"Category: {product_data.get('category', '')}\n")
+            f.write(f"Region: {product_data.get('region', '')}\n\n")
             
-            if product_info['specifications']:
-                f.write("Specifications:\\n")
-                for spec in product_info['specifications']:
+            description = product_data.get('description', '')
+            if description:
+                f.write(f"Description:\n{description}\n\n")
+            
+            specs = product_data.get('specs', [])
+            if specs:
+                f.write("Specifications:\n")
+                for spec in specs:
                     if isinstance(spec, list) and len(spec) >= 2:
-                        f.write(f"  {spec[0]}: {spec[1]}\\n")
+                        f.write(f"  {spec[0]}: {spec[1]}\n")
+                    elif isinstance(spec, dict):
+                        for key, value in spec.items():
+                            f.write(f"  {key}: {value}\n")
+                f.write("\n")
             
-            f.write(f"\\nImage URL: {product_info['image_url']}\\n")
+            f.write(f"Image URL: {product_data.get('imageUrl', '')}\n")
+            f.write(f"Created: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
         
         return {
             "folder_path": product_folder,
-            "image_filename": os.path.basename(image_path) if image_path else None
+            "folder_name": folder_name,
+            "image_filename": image_filename,
+            "txt_filename": txt_filename,
+            "json_filename": json_filename
         }
     except Exception as e:
         print(f"Error creating product package: {e}")
         return None
 
-def download_product_image(image_url, product_folder, product_name):
-    """Download image to the specific product folder"""
+def download_product_image(image_url, product_folder, base_filename):
+    """Download image to the specific product folder with proper naming"""
     if not image_url:
         return None
         
@@ -227,17 +245,25 @@ def download_product_image(image_url, product_folder, product_name):
         path = parsed_url.path
         ext = os.path.splitext(path)[1] if os.path.splitext(path)[1] else '.jpg'
         
-        # Create simple image filename
-        image_filename = f"image{ext}"
+        # Create filename: SKU--ProductName--Image.ext
+        image_filename = f"{base_filename}{ext}"
         local_path = os.path.join(product_folder, image_filename)
         
-        # Download the image
-        urllib.request.urlretrieve(image_url, local_path)
+        # Download the image with proper headers
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        }
         
+        req = Request(image_url, headers=headers)
+        with urlopen(req, timeout=10) as response:
+            with open(local_path, 'wb') as f:
+                f.write(response.read())
+        
+        print(f"Successfully downloaded image: {image_filename}")
         return local_path
         
     except Exception as e:
-        print(f"Error downloading image: {e}")
+        print(f"Error downloading image from {image_url}: {e}")
         return None
 
 # PROTECTED ROUTES (require login)
@@ -274,7 +300,7 @@ def search_sku():
             region = product.get('region', '')
             
             # Create product package (folder with all data and assets)
-            package_info = create_product_package(product, sku)
+            package_info = create_product_package(product, sku, upc_data)
             
             # Format specifications
             specs_text = ""
@@ -343,7 +369,7 @@ def batch_search():
                     region = product.get('region', '')
                     
                     # Create product package (folder with all data and assets)
-                    package_info = create_product_package(product, sku)
+                    package_info = create_product_package(product, sku, upc_data)
                     
                     # Format specifications
                     specs_text = ""
