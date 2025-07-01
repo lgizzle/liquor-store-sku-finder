@@ -120,14 +120,12 @@ def create_product_package(product_data, sku):
             
             f.write(f"\\nImage URL: {product_info['image_url']}\\n")
             f.write(f"Local Image: {product_info['local_image_path'] or 'Not available'}\\n")
-            f.write(f"Created: {product_info['created_date']}\\n")
         
+        return {
+            "folder_path": product_folder,
             "image_filename": os.path.basename(image_path) if image_path else None,
             "json_path": json_path,
             "txt_path": txt_path
-        }
-        return {
-            "folder_path": product_folder,
         }
         
     except Exception as e:
@@ -194,8 +192,6 @@ def search_sku():
             if specs:
                 specs_text = " | ".join([f"{spec[0]}: {spec[1]}" for spec in specs[:3]])  # First 3 specs
             
-                "confidence": 1.0,  # High confidence for exact UPC matches
-            }
             # Create result in expected format with enhanced data
             result = {
                 "sku": sku,
@@ -208,10 +204,10 @@ def search_sku():
                 "category": category,
                 "specs": specs_text,
                 "region": region,
-                "local_path": package_info["image_path"] if package_info else None,
-                "folder_name": package_info["folder_name"] if package_info else None,
+                "local_path": package_info["folder_path"] if package_info else None,
+                "folder_name": os.path.basename(package_info["folder_path"]) if package_info else None,
                 "image_filename": package_info["image_filename"] if package_info else None,
-            
+            }
             results.append(result)
 
         return jsonify({
@@ -278,8 +274,8 @@ def batch_search():
                         "region": region,
                          "image_filename": package_info["image_filename"] if package_info else None,
                          "package_created": package_info is not None,
-                         "local_path": package_info["image_path"] if package_info else None,
-                         "folder_name": package_info["folder_name"] if package_info else None,
+                         "local_path": package_info["folder_path"] if package_info else None,
+                         "folder_name": os.path.basename(package_info["folder_path"]) if package_info else None,
                     }
                     
                     sku_results.append(result)
